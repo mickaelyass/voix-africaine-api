@@ -1,15 +1,19 @@
-from dotenv import load_dotenv
-import os
+
 import cloudinary
 
-load_dotenv()  # Charge les variables du .env
+from app.config import settings
+
 
 def init_cloudinary():
-    cloudinary.config(
-        cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
-        api_key=os.getenv("CLOUDINARY_API_KEY"),
-        api_secret=os.getenv("CLOUDINARY_API_SECRET"),
-        secure=True
-    )
-    print("Cloudinary config:", cloudinary.config())
+    """
+    Initialise la connexion à Cloudinary.
+    """
 
+    cloudinary.config(
+        cloud_name=settings.CLOUDINARY_CLOUD_NAME,
+        api_key=settings.CLOUDINARY_API_KEY,
+        api_secret=settings.CLOUDINARY_API_SECRET,
+        secure=True,
+    )
+
+    print("✅ Cloudinary configuré avec succès")

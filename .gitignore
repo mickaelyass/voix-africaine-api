@@ -1,2 +1,24 @@
+# ============ SECRETS — jamais sur GitHub ============
+# Le .env réel (dev local) et toutes ses variantes restent locaux.
+# En production, renseigner les variables directement (Render/Render Dashboard
+# > Environment) — aucun fichier .env n'est déployé.
 .env
-docker-compose.yml
+.env.*
+!.env.example
+
+# ============ PYTHON ============
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# ============ IDE / OS ============
+.idea/
+.vscode/
+.DS_Store
+
+# ============ DOCKER ============
+# (docker-compose.yml ne contient AUCUN secret en dur)

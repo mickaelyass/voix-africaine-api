@@ -64,6 +64,11 @@ class Chapitre(BaseModel):
     is_public: Optional[bool] = Field(False, description="Si l'audio est public")
     duration_sec: Optional[int] = Field(None, gt=0, description="Durée audio en secondes")
     created_by: Optional[str] = Field(None, description="ID de l'utilisateur qui a ajouté l'audio du chapitre")
+    audio_validated: bool = Field( False, description="Indique si l'audio a été validé par un administrateur")
+    audio_validated_at: Optional[datetime] = Field( None,description="Date de validation de l'audio")
+    audio_validated_by: Optional[str] = Field(None, description="ID de l'administrateur ayant validé l'audio")
+    audio_public_id: Optional[str] = Field( None,description="Identifiant public Cloudinary de l'audio")
+    audio_resource_type: Optional[str] = Field( None,description="Type de ressource Cloudinary de l'audio ('video' pour un fichier audio)")
 
 class Lecture(BaseModel):
     user_id: str = Field(..., description="ID de l'utilisateur")
@@ -113,7 +118,12 @@ class CommentaireInDB(CommentaireBase):
 class CommentairePublic(CommentaireBase):
     """Version publique d'un commentaire (sans données sensibles)"""
     id: str = Field(..., alias="_id")
-    user_info: Optional[UserPublic] = Field(..., description="Infos publiques de l'utilisateur")
+    chapitre_id: Optional[str] = Field(None, description="ID du chapitre commenté")
+    # Optionnel par défaut : un commentaire dont l'auteur a été supprimé reste
+    # listable (auparavant ``Field(...)`` le rendait obligatoire).
+    user_info: Optional[UserPublic] = Field(
+        None, description="Infos publiques de l'utilisateur"
+    )
     created_at: datetime
     updated_at: datetime
 
@@ -128,11 +138,33 @@ class CommentairePublic(CommentaireBase):
             "id": self.id,
             "contenu": self.contenu,
             "timestamp": self.timestamp,
+            "chapitre_id": self.chapitre_id,
             "user_info": self.user_info,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat()
         }
 
 class ChapitreWithComments(ChapitrePublic):
-    """Extension du modèle Chapitre avec les commentaires"""
+    """Extension du modèle Chapitre avec les commentaires.
+
+    ``ChapitrePublic`` définit un ``model_serializer`` qui n'expose que 6
+    champs : en héritant sans le surcharger, le champ ``commentaires`` était
+    silencieusement retiré de la réponse HTTP.
+    """
+
     commentaires: List[CommentairePublic] = Field(default_factory=list)
+
+    @model_serializer
+    def serialize_model(self):
+        return {
+            "id": self.id,
+            "livre_id": self.livre_id,
+            "titre": self.titre,
+            "numero": self.numero,
+            "contenu_texte": self.contenu_texte,
+            "audio_url": self.audio_url if self.is_public else None,
+            "duration_sec": self.duration_sec,
+            "is_public": bool(self.is_public),
+            "audio_validated": self.audio_validated,
+            "commentaires": self.commentaires,
+        }

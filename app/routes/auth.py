@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
-from app.auth_utils import get_current_active_user
-from app.models import Token, UserPublic, UserCreate, UserInDB
+from app.auth_utils import get_current_active_user, require_admin
+from app.models import Token, UserPublic, UserCreate
 from app.services.auth_service import (
     register_user,
     authenticate_for_token,
@@ -36,10 +36,24 @@ async def google_auth_route(token: str):
     # Implémentation Google OAuth
      pass
 
-@router.get("/",response_model=list[UserInDB])
-async def alluser():
+@router.get("/",response_model=list[UserPublic])
+async def alluser(current_user: dict = Depends(require_admin)):
     return await get_all_user()
 
+
 @router.get("/{user_id}", response_model=UserPublic)
-async def get_user(user_id: str):
+async def get_user(
+    user_id: str,
+    current_user: dict = Depends(get_current_active_user),
+):
+    # Données personnelles : seul l'utilisateur lui-même ou un
+    # administrateur peut consulter un profil (cf. readme §5 point 7).
+    if (
+        current_user.get("role", "user") != "admin"
+        and str(current_user["_id"]) != user_id
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Accès refusé",
+        )
     return await _get_user_public_info(user_id)

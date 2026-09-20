@@ -21,7 +21,7 @@ async def create_livre(livre: Livre, current_user: dict = Depends(get_current_us
             detail="Un livre avec ce titre existe déjà"
         )
 
-    livre_dict = livre.dict()
+    livre_dict = livre.model_dump()
     result = await db["livres"].insert_one(livre_dict)
     created_livre = await db["livres"].find_one({"_id": result.inserted_id})
     return created_livre
@@ -62,7 +62,7 @@ async def update_livre(livre_id: str, livre: Livre, current_user: dict = Depends
 
     await db["livres"].update_one(
         {"id": livre_id},
-        {"$set": livre.dict(exclude_unset=True)}
+        {"$set": livre.model_dump(exclude_unset=True)}
     )
     return await db["livres"].find_one({"id": livre_id})
 
@@ -74,6 +74,22 @@ async def delete_livre(livre_id: str, current_user: dict):
             detail="Action réservée aux administrateurs"
         )
 
+    livre = await db["livres"].find_one({"id": livre_id})
+    if not livre:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Livre non trouvé"
+        )
+
+    # Suppression en cascade (cf. readme §6.2 point 15) : les chapitres du
+    # livre, puis leurs commentaires et lectures liés, avant le livre lui-même.
+    chapitres = await db["chapitres"].find({"livre_id": livre_id}, {"id": 1}).to_list(None)
+    chapitre_ids = [ch.get("id") for ch in chapitres if ch.get("id")]
+    if chapitre_ids:
+        await db["commentaires"].delete_many({"chapitre_id": {"$in": chapitre_ids}})
+        await db["lectures"].delete_many({"chapitre_id": {"$in": chapitre_ids}})
+        await db["chapitres"].delete_many({"livre_id": livre_id})
+
     result = await db["livres"].delete_one({"id": livre_id})
     if result.deleted_count == 0:
         raise HTTPException(
@@ -83,5 +99,7 @@ async def delete_livre(livre_id: str, current_user: dict):
     return {"message": "Livre supprimé avec succès"}
 
 
-async def get_public_livres():
-    return await db["livres"].find({"is_public": True}).to_list(1000)
+async def get_public_livres(skip: int = 0, limit: int = 100):
+    safe_skip = max(skip, 0)
+    safe_limit = min(max(limit, 1), 1000)
+    return await db["livres"].find({"is_public": True}).skip(safe_skip).limit(safe_limit).to_list(safe_limit)

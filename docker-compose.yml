@@ -5,10 +5,12 @@ services:
     build: .
     ports:
       - "8000:8000"
+    # ⚠️ Aucun secret en dur ici.
+    # En local : les valeurs viennent du fichier .env (chargé via env_file).
+    # En production (Render, etc.) : renseigner les variables d'environnement
+    # directement dans le dashboard — aucun fichier .env n'est envoyé.
+    env_file:
+      - .env
     environment:
-      - SECRET_KEY=votre-clé-secrète-complexe
-      - MONGO_URI=mongodb+srv://bonheur:yass2001@cluster0.oerjrcp.mongodb.net/?appName=Cluster0
-      - MONGO_DB_NAME=voix_africaine
-      - CLOUDINARY_CLOUD_NAME=dgpfxt5an
-      - CLOUDINARY_API_KEY=265767778693966
-      - CLOUDINARY_API_SECRET=o8yA600OB2zjBMtemBP8wxIfGGg
+      - MONGO_DB_NAME=${MONGO_DB_NAME:-voix_africaine}
+

@@ -62,18 +62,15 @@ def get_current_user_profile(user_data: dict):
         "created_at": user_data["created_at"]
     }
 
-async def get_all_user():
+async def get_all_user() -> list[UserPublic]:
     users = await db["users"].find().to_list(1000)
     return [
-        UserInDB(
-            _id=str(user["_id"]),  # Conversion ici
-            email=user["email"],
-            full_name=user["full_name"],
-            hashed_password=user["hashed_password"],
+        UserPublic(
+            id=str(user["_id"]),
+            email=user.get("email", ""),
+            full_name=user.get("full_name", ""),
             role=user.get("role", "user"),
-            disabled=user.get("disabled", False),
             created_at=user["created_at"],
-            google_id=user.get("google_id")
         )
         for user in users
     ]

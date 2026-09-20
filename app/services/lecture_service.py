@@ -19,7 +19,7 @@ async def create_lecture(lecture: Lecture, current_user: dict = Depends(get_curr
     lecture.user_id = current_user["id"]
     await db["lectures"].update_one(
         {"user_id": lecture.user_id, "chapitre_id": lecture.chapitre_id},
-        {"$set": lecture.dict()},
+        {"$set": lecture.model_dump()},
         upsert=True
     )
     return await db["lectures"].find_one({

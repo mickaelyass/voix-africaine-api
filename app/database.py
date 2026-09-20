@@ -1,17 +1,35 @@
+
 from motor.motor_asyncio import AsyncIOMotorClient
+
 from app.config import settings
 
-# Client MongoDB asynchrone
+
+# ==========================================
+# Connexion MongoDB
+# ==========================================
+
 client = AsyncIOMotorClient(settings.MONGO)
-db = client[settings.MONGO_DB_NAME]  # Accès direct à la base de données
+
+db = client[settings.MONGO_DB_NAME]
+
 
 async def init_db():
     """
-    Vérifie la connexion à MongoDB Atlas
+    Vérifie la connexion à MongoDB Atlas.
     """
+
     try:
-        await client.admin.command('ping')
-        print("✅ Connecté à MongoDB avec succès")
+        await client.admin.command("ping")
+
+        print(
+            f"✅ Connecté à MongoDB : {settings.MONGO_DB_NAME}"
+        )
+
     except Exception as e:
-        print("❌ Erreur de connexion à MongoDB :", e)
-        raise e
+
+        print(
+            f"❌ Erreur de connexion à MongoDB : {e}"
+        )
+
+        raise
+
