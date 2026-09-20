@@ -1,8 +1,8 @@
 """
 Initialisation manuelle de la base MongoDB.
 
-À utiliser pour préparer la base sans démarrer l'API
-(index + administrateur par défaut).
+A utiliser pour preparer la base sans demarrer l'API
+(index + administrateur par defaut).
 
 Usage, depuis la racine du projet :
 
@@ -13,7 +13,7 @@ import asyncio
 import sys
 
 from app.bootstrap import init_database
-from app.database import client, init_db
+from app.database import get_client, init_db
 
 
 async def main() -> int:
@@ -21,9 +21,9 @@ async def main() -> int:
     await init_db()
     await init_database()
 
-    client.close()
+    get_client().close()
 
-    print("✅ Base de données initialisée")
+    print("Base de donnees initialisee")
     return 0
 
 

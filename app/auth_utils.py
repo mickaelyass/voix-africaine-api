@@ -22,11 +22,20 @@ async def authenticate_user(email: str, password: str):
         return None
     return user
 
+def _jwt_secret() -> str:
+    if not settings.SECRET_KEY:
+        raise RuntimeError(
+            "SECRET_KEY manquante - renseignez-la dans le dashboard Render "
+            "(Service > Environment)."
+        )
+    return settings.SECRET_KEY
+
+
 def create_access_token(data: dict, expires_delta: timedelta):
     to_encode = data.copy()
     expire = datetime.utcnow() + expires_delta
     to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    return jwt.encode(to_encode, _jwt_secret(), algorithm=settings.ALGORITHM)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 
@@ -41,7 +50,7 @@ async def get_current_user(
     try:
         payload = jwt.decode(
             token,
-            settings.SECRET_KEY,
+            _jwt_secret(),
             algorithms=[settings.ALGORITHM]
         )
 

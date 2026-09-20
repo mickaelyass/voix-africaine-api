@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: voix-africaine-api
+    runtime: docker
+    # Le build Docker ne connait AUCUN secret : l'import n'exige plus rien.
+    # Les secrets sont injectes uniquement au runtime (dashboard ci-dessous).
+    healthCheckPath: /health
+    envVars:
+      - key: SECRET_KEY
+        sync: false # generer : python -c "import secrets; print(secrets.token_urlsafe(64))"
+      - key: MONGO
+        sync: false # ex. mongodb+srv://user:pass@cluster.xxx.mongodb.net/?retryWrites=true&w=majority
+      - key: MONGO_DB_NAME
+        value: voix_africaine
+      - key: DEFAULT_ADMIN_EMAIL
+        value: admin@voixafricaine.com
+      - key: DEFAULT_ADMIN_PASSWORD
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
