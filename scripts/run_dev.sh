@@ -20,7 +20,7 @@ fi
 
 echo "▶  API       : http://${HOST}:${PORT}"
 echo "▶  Swagger   : http://${HOST}:${PORT}/docs"
-echo "▶  MongoDB   : mongodb://localhost:27017 (voir .env)"
+echo "▶  MongoDB   : Atlas (voir MONGO dans .env)"
 echo
 
 exec env/bin/uvicorn main:app --host "${HOST}" --port "${PORT}" --reload
