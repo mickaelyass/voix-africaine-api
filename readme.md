@@ -25,7 +25,7 @@ utilisateurs d'écouter (tracer des **lectures**) et de commenter l'audio à une
 ## 2. Architecture
 
 ```
-voix_africaine/
+voix-africaine-api/
 ├── main.py                     # Point d'entrée FastAPI : app, startup, routeurs, middlewares
 ├── requirements.txt            # Dépendances Python
 ├── .env                        # Configuration locale (gitignoré)
@@ -393,7 +393,7 @@ Les points 1, 2, 3, 4, 8 et 14 ont été corrigés. Détail des changements :
 | `app/routes/comment.py` | `DELETE` utilise `current_user["_id"]` (plus d'`AttributeError`) ; `POST` s'appuie sur `get_current_active_user` et ignore `user_id` ; `GET /` exige `chapitre_id` et propage `skip`/`limit` ; `GET /all` accepte `skip`/`limit` ; les `HTTPException` ne sont plus écrasées en 400/500 |
 | `app/services/commentaire_service.py` | jointure `$lookup` avec `$convert` string → ObjectId (le `user_id` stocké en string ne matchait jamais `users._id`) ; projection complète de `UserPublic` (`role`, `created_at`) ; liste vide au lieu de 404 ; pagination réelle ; recherche du chapitre par `{"id": ...}` ; création refusée si le chapitre n'existe pas ; comparaison des identifiants en `str` |
 | `app/models.py` | `CommentairePublic.user_info` devient optionnel (auteur supprimé) et expose `chapitre_id` ; `ChapitreWithComments` redéfinit son `@model_serializer` pour ne plus perdre `commentaires` |
-| `voix_africaine_frontend/src/pages/ListeChapitres.jsx` | n'envoie plus `user_id` ; garde `commentaire.user_info?.full_name` ; bouton « Supprimer » pour l'auteur ou un admin ; remontée des erreurs API |
+| `../voix-africaine-web/src/pages/ListeChapitres.jsx` | n'envoie plus `user_id` ; garde `commentaire.user_info?.full_name` ; bouton « Supprimer » pour l'auteur ou un admin ; remontée des erreurs API |
 | `scripts/smoke_test.py` | les 3 bugs bloquants ne sont plus marqués « échec connu » ; couverture ajoutée : auteur déduit du token, `user_id` forgé ignoré, pagination, `/all`, `/chapitre/{id}`, `DELETE` 204 puis 404 |
 
 Résultat du test de fumée après correction : **23/23 vérifications réussies**.
@@ -665,7 +665,7 @@ du dépôt :
 > identifiés sur les commentaires (points 1, 2, 3, 4, 8 et 14) ont été
 > corrigés dans `app/models.py`, `app/routes/comment.py`,
 > `app/services/commentaire_service.py` et
-> `voix_africaine_frontend/src/pages/ListeChapitres.jsx`. Le reste de
+> `../voix-africaine-web/src/pages/ListeChapitres.jsx`. Le reste de
 > l'analyse (sections 5 à 7) demeure une feuille de route.
 
 Aucune autre correction de code n'a été appliquée : ce fichier reste un état
