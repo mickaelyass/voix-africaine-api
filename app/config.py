@@ -34,6 +34,39 @@ class Settings(BaseSettings):
     MONGO: Optional[str] = None
     MONGO_DB_NAME: str = "voix_africaine"
 
+    # Pool de connexions MongoDB — réduit la latence des requêtes répétées
+    # en réutilisant les connexions plutôt que d'en ouvrir une par requête.
+    MONGO_MAX_POOL_SIZE: int = 50
+    MONGO_MIN_POOL_SIZE: int = 10
+    MONGO_SERVER_SELECTION_TIMEOUT_MS: int = 5000
+    MONGO_CONNECT_TIMEOUT_MS: int = 10000
+    MONGO_SOCKET_TIMEOUT_MS: int = 20000
+
+
+    # ==========================================
+    # RATE LIMITING (sécurité)
+    # ==========================================
+    # Limite les requêtes par IP pour protéger contre le brute-force et le DDoS.
+    # 0 = désactivé (utile en dev local).
+
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_AUTH_ATTEMPTS: int = 5        # max tentatives /auth/token par fenêtre
+    RATE_LIMIT_AUTH_WINDOW_SECONDS: int = 60  # fenêtre glissante (secondes)
+    RATE_LIMIT_GLOBAL_REQUESTS: int = 120     # max requêtes globales par IP / fenêtre
+    RATE_LIMIT_GLOBAL_WINDOW_SECONDS: int = 60
+
+
+    # ==========================================
+    # UPLOAD / TÉLÉVERSEMENT AUDIO
+    # ==========================================
+
+    MAX_AUDIO_UPLOAD_MB: int = 50            # taille max fichier audio (Mo)
+    ALLOWED_AUDIO_EXTENSIONS: str = "mp3,wav,ogg,m4a,webm,flac"
+    ALLOWED_AUDIO_MIME_TYPES: str = (
+        "audio/mpeg,audio/wav,audio/x-wav,audio/ogg,audio/mp4,"
+        "audio/x-m4a,audio/webm,audio/flac"
+    )
+
 
     # ==========================================
     # GOOGLE AUTH
@@ -50,6 +83,14 @@ class Settings(BaseSettings):
     CLOUDINARY_CLOUD_NAME: Optional[str] = None
     CLOUDINARY_API_KEY: Optional[str] = None
     CLOUDINARY_API_SECRET: Optional[str] = None
+
+
+    # ==========================================
+    # LOGGING / OBSERVABILITÉ
+    # ==========================================
+
+    LOG_LEVEL: str = "INFO"                 # DEBUG, INFO, WARNING, ERROR
+    LOG_FORMAT: str = "json"                # "json" (prod) ou "text" (dev)
 
 
     # ==========================================

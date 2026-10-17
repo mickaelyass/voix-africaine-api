@@ -22,3 +22,25 @@ services:
         sync: false
       - key: CLOUDINARY_API_SECRET
         sync: false
+
+      # ==========================================
+      # LOGGING / OBSERVABILITE (Prompt 06)
+      # ==========================================
+      - key: LOG_LEVEL
+        value: INFO
+      - key: LOG_FORMAT
+        value: json
+
+      # ==========================================
+      # POOL MONGODB (Bonus — performance auth)
+      # ==========================================
+      - key: MONGO_MAX_POOL_SIZE
+        value: "50"
+      - key: MONGO_MIN_POOL_SIZE
+        value: "10"
+
+      # ==========================================
+      # RATE LIMITING (Prompt 05 — securite)
+      # ==========================================
+      - key: RATE_LIMIT_ENABLED
+        value: "true"

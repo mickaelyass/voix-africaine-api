@@ -1,7 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+import logging
+import time
+
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app.auth_utils import get_current_active_user, require_admin
+from app.middleware import get_client_ip, rate_limiter
 from app.models import Token, UserPublic, UserCreate
 from app.services.auth_service import (
     register_user,
@@ -10,6 +14,8 @@ from app.services.auth_service import (
 
 )
 
+logger = logging.getLogger("voix_africaine.auth")
+
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 @router.post("/register", response_model=UserPublic)
@@ -17,8 +23,59 @@ async def register(user_data: UserCreate):
     return await register_user(user_data)
 
 @router.post("/token", response_model=Token)
-async def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    return await authenticate_for_token(form_data.username, form_data.password)
+async def login(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    request: Request = None,
+):
+    # ==========================================
+    # RATE LIMITING — protection brute-force
+    # ==========================================
+    ip = get_client_ip(request) if request else "unknown"
+
+    if not rate_limiter.check_auth(ip):
+        logger.warning(
+            "auth_rate_limited",
+            extra={"ip": ip, "username": form_data.username},
+        )
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Trop de tentatives de connexion. Réessayez dans une minute.",
+        )
+
+    rate_limiter.record_auth(ip)
+
+    # ==========================================
+    # AUTHENTIFICATION AVEC TIMING
+    # ==========================================
+    start = time.perf_counter()
+    try:
+        result = await authenticate_for_token(form_data.username, form_data.password)
+    except HTTPException:
+        duration = time.perf_counter() - start
+        logger.warning(
+            "auth_failed",
+            extra={
+                "ip": ip,
+                "username": form_data.username,
+                "duration_ms": round(duration * 1000, 1),
+            },
+        )
+        raise
+
+    duration = time.perf_counter() - start
+    logger.info(
+        "auth_success",
+        extra={
+            "ip": ip,
+            "username": form_data.username,
+            "duration_ms": round(duration * 1000, 1),
+        },
+    )
+
+    # Reset du compteur après un login réussi
+    rate_limiter.reset(ip)
+
+    return result
 
 @router.get("/me", response_model=UserPublic)
 async def read_users_me(current_user: dict = Depends(get_current_active_user)):
