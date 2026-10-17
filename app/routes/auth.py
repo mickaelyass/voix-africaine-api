@@ -11,7 +11,7 @@ from app.services.auth_service import (
     register_user,
     authenticate_for_token,
     get_current_user_profile, get_all_user, _get_user_public_info,
-
+    get_user_full_stats,
 )
 
 logger = logging.getLogger("voix_africaine.auth")
@@ -96,6 +96,19 @@ async def google_auth_route(token: str):
 @router.get("/",response_model=list[UserPublic])
 async def alluser(current_user: dict = Depends(require_admin)):
     return await get_all_user()
+
+
+@router.get("/stats/{user_id}")
+async def get_user_stats(
+    user_id: str,
+    current_user: dict = Depends(require_admin),
+):
+    """Statistiques complètes d'un utilisateur (admin uniquement).
+
+    Retourne le profil, les lectures, commentaires et chapitres créés.
+    Placé avant `/{user_id}` pour éviter toute ambiguïté de routage.
+    """
+    return await get_user_full_stats(user_id)
 
 
 @router.get("/{user_id}", response_model=UserPublic)

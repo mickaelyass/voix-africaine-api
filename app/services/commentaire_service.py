@@ -164,6 +164,32 @@ class CommentaireService:
         return commentaires
 
     @staticmethod
+    async def get_commentaires_for_user(
+        user_id: str,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> List[CommentairePublic]:
+        """Tous les commentaires postés par un utilisateur (admin ou soi-même).
+
+        ``user_id`` est stocké en chaîne : requête directe sur le champ string,
+        sans jointure ``$lookup`` (l'auteur est connu d'avance).
+        """
+        safe_skip = max(skip, 0)
+        safe_limit = limit if limit and limit > 0 else 100
+
+        docs = await (
+            db["commentaires"]
+            .find({"user_id": user_id})
+            .sort("created_at", -1)
+            .skip(safe_skip)
+            .limit(safe_limit)
+            .to_list(length=safe_limit)
+        )
+
+        user_info = await _user_public_for(user_id)
+        return [_to_public_commentaire(doc, user_info) for doc in docs]
+
+    @staticmethod
     async def get_chapitre_with_comments(
         chapitre_id: str,
         current_user_id: Optional[str] = None,

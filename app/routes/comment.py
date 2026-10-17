@@ -41,6 +41,29 @@ async def get_commentaires_chapitre(
     )
 
 
+@router.get("/user/{user_id}", response_model=List[CommentairePublic])
+async def get_commentaires_user(
+    user_id: str,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    current_user: dict = Depends(get_current_user),
+):
+    """Liste les commentaires d'un utilisateur (admin ou soi-même)."""
+    if (
+        current_user.get("role", "user") != "admin"
+        and str(current_user["_id"]) != user_id
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Accès refusé",
+        )
+    return await CommentaireService.get_commentaires_for_user(
+        user_id=user_id,
+        skip=skip,
+        limit=limit,
+    )
+
+
 @router.get("/all", response_model=List[CommentairePublic])
 async def get_all_commentaires(
     skip: int = Query(0, ge=0),

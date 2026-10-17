@@ -104,3 +104,124 @@ async def _get_user_public_info(user_id: str) -> UserPublic:
         role=user.get("role", "user"),
         created_at=user["created_at"]
     )
+
+
+async def get_user_full_stats(user_id: str) -> dict:
+    """
+    Retourne le profil complet d'un utilisateur avec ses statistiques :
+    - profil public
+    - nombre de lectures + dernières lectures
+    - nombre de commentaires + derniers commentaires
+    - nombre de chapitres créés + derniers chapitres créés
+    """
+    if not ObjectId.is_valid(user_id):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="ID utilisateur invalide"
+        )
+
+    user = await db["users"].find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Utilisateur non trouvé"
+        )
+
+    user_public = UserPublic(
+        id=str(user["_id"]),
+        email=user.get("email", ""),
+        full_name=user.get("full_name", ""),
+        role=user.get("role", "user"),
+        created_at=user["created_at"]
+    )
+
+    # ==========================================
+    # LECTURES
+    # ==========================================
+    lectures_count = await db["lectures"].count_documents({"user_id": user_id})
+    recent_lectures_raw = await (
+        db["lectures"]
+        .find({"user_id": user_id})
+        .sort("date_lecture", -1)
+        .limit(10)
+        .to_list(10)
+    )
+
+    # Enrichir avec le titre du chapitre
+    recent_lectures = []
+    for doc in recent_lectures_raw:
+        chapitre = await db["chapitres"].find_one(
+            {"id": doc.get("chapitre_id")},
+            {"titre": 1, "livre_id": 1}
+        )
+        recent_lectures.append({
+            "chapitre_id": doc.get("chapitre_id"),
+            "chapitre_titre": (chapitre or {}).get("titre", "Chapitre supprimé"),
+            "livre_id": (chapitre or {}).get("livre_id"),
+            "date_lecture": doc.get("date_lecture"),
+            "is_completed": doc.get("is_completed", False),
+            "listened_seconds": doc.get("listened_seconds", 0),
+        })
+
+    # ==========================================
+    # COMMENTAIRES
+    # ==========================================
+    comments_count = await db["commentaires"].count_documents({"user_id": user_id})
+    recent_comments_raw = await (
+        db["commentaires"]
+        .find({"user_id": user_id})
+        .sort("created_at", -1)
+        .limit(10)
+        .to_list(10)
+    )
+
+    recent_comments = []
+    for doc in recent_comments_raw:
+        chapitre = await db["chapitres"].find_one(
+            {"id": doc.get("chapitre_id")},
+            {"titre": 1, "livre_id": 1}
+        )
+        recent_comments.append({
+            "id": str(doc["_id"]),
+            "contenu": doc.get("contenu", ""),
+            "timestamp": doc.get("timestamp", 0),
+            "chapitre_id": doc.get("chapitre_id"),
+            "chapitre_titre": (chapitre or {}).get("titre", "Chapitre supprimé"),
+            "created_at": doc.get("created_at"),
+        })
+
+    # ==========================================
+    # CHAPITRES CRÉÉS
+    # ==========================================
+    chapitres_count = await db["chapitres"].count_documents({"created_by": user_id})
+    recent_chapitres_raw = await (
+        db["chapitres"]
+        .find({"created_by": user_id})
+        .sort("_id", -1)
+        .limit(10)
+        .to_list(10)
+    )
+
+    recent_chapitres = []
+    for doc in recent_chapitres_raw:
+        recent_chapitres.append({
+            "id": doc.get("id"),
+            "titre": doc.get("titre", ""),
+            "livre_id": doc.get("livre_id"),
+            "numero": doc.get("numero"),
+            "is_public": doc.get("is_public", False),
+            "audio_validated": doc.get("audio_validated", False),
+            "audio_url": bool(doc.get("audio_url")),
+        })
+
+    return {
+        "user": user_public,
+        "stats": {
+            "lectures_count": lectures_count,
+            "comments_count": comments_count,
+            "chapitres_count": chapitres_count,
+        },
+        "recent_lectures": recent_lectures,
+        "recent_comments": recent_comments,
+        "recent_chapitres": recent_chapitres,
+    }
