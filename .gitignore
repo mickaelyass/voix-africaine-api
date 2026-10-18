@@ -10,6 +10,15 @@
 __pycache__/
 *.py[cod]
 *$py.class
+
+# ============ SCRIPTS LOCAUX (dev/test — jamais en production ni sur GitHub) ============
+# smoke_test / test_audio_flow : contiennent des identifiants admin en dur.
+# import_chevre : import de données one-shot. run_dev.sh : lancement local.
+# En prod, le bootstrap (app/bootstrap.py) crée index + admin automatiquement.
+scripts/smoke_test.py
+scripts/test_audio_flow.py
+scripts/import_chevre.py
+scripts/run_dev.sh
 *.so
 *.egg-info/
 .eggs/

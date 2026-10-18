@@ -13,7 +13,7 @@ services:
       - key: MONGO_DB_NAME
         value: voix_africaine
       - key: DEFAULT_ADMIN_EMAIL
-        value: admin@voixafricaine.com
+        sync: false # definir dans le dashboard (aucune valeur par defaut en dur)
       - key: DEFAULT_ADMIN_PASSWORD
         sync: false
       - key: CLOUDINARY_CLOUD_NAME
